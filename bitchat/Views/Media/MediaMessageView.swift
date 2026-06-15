@@ -10,25 +10,38 @@ import BitFoundation
 
 struct MediaMessageView: View {
     @Environment(\.colorScheme) private var colorScheme
-
-    @EnvironmentObject var viewModel: ChatViewModel
+    @Environment(\.appTheme) private var theme
+    @EnvironmentObject private var conversationUIModel: ConversationUIModel
     let message: BitchatMessage
     let media: BitchatMessage.Media
+    /// Value snapshot of the message's mutable delivery status, captured at
+    /// construction (see `TextMessageView.deliveryStatus`): `BitchatMessage`
+    /// is a reference type mutated in place, and SwiftUI compares reference
+    /// fields by identity, so without the snapshot a status-only change
+    /// (send progress, delivered → read) would not re-render this row.
+    private let deliveryStatus: DeliveryStatus?
 
     @Binding var imagePreviewURL: URL?
 
+    init(message: BitchatMessage, media: BitchatMessage.Media, imagePreviewURL: Binding<URL?>) {
+        self.message = message
+        self.media = media
+        self.deliveryStatus = message.deliveryStatus
+        self._imagePreviewURL = imagePreviewURL
+    }
+
     var body: some View {
-        let state = mediaSendState(for: message)
-        let isFromMe = message.sender == viewModel.nickname || message.senderPeerID == viewModel.meshService.myPeerID
-        let cancelAction: (() -> Void)? = state.canCancel ? { viewModel.cancelMediaSend(messageID: message.id) } : nil
+        let state = mediaSendState(for: deliveryStatus)
+        let isFromMe = conversationUIModel.isMediaMessageFromCurrentUser(message)
+        let cancelAction: (() -> Void)? = state.canCancel ? { conversationUIModel.cancelMediaSend(messageID: message.id) } : nil
 
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .center, spacing: 4) {
-                Text(viewModel.formatMessageHeader(message, colorScheme: colorScheme))
+                Text(conversationUIModel.formatMessageHeader(message, colorScheme: colorScheme, theme: theme))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if message.isPrivate && message.sender == viewModel.nickname,
-                   let status = message.deliveryStatus {
+                if message.isPrivate && conversationUIModel.isSentByCurrentUser(message),
+                   let status = deliveryStatus {
                     DeliveryStatusView(status: status)
                         .padding(.leading, 4)
                 }
@@ -55,7 +68,7 @@ struct MediaMessageView: View {
                                 imagePreviewURL = url
                             }
                         },
-                        onDelete: !isFromMe ? { viewModel.deleteMediaMessage(messageID: message.id) } : nil
+                        onDelete: !isFromMe ? { conversationUIModel.deleteMediaMessage(messageID: message.id) } : nil
                     )
                     .frame(maxWidth: 280)
                 }
@@ -64,10 +77,10 @@ struct MediaMessageView: View {
         .padding(.vertical, 4)
     }
 
-    private func mediaSendState(for message: BitchatMessage) -> (isSending: Bool, progress: Double?, canCancel: Bool) {
+    private func mediaSendState(for deliveryStatus: DeliveryStatus?) -> (isSending: Bool, progress: Double?, canCancel: Bool) {
         var isSending = false
         var progress: Double?
-        if let status = message.deliveryStatus {
+        if let status = deliveryStatus {
             switch status {
             case .sending:
                 isSending = true
@@ -81,7 +94,7 @@ struct MediaMessageView: View {
                 break
             }
         }
-        let canCancel = isSending && message.sender == viewModel.nickname
+        let canCancel = isSending && conversationUIModel.isSentByCurrentUser(message)
         let clamped = progress.map { max(0, min(1, $0)) }
         return (isSending, isSending ? clamped : nil, canCancel)
     }

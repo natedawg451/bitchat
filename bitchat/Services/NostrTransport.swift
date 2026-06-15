@@ -106,6 +106,7 @@ final class NostrTransport: Transport, @unchecked Sendable {
     // MARK: - Transport Protocol Conformance
 
     weak var delegate: BitchatDelegate?
+    weak var eventDelegate: TransportEventDelegate?
     weak var peerEventsDelegate: TransportPeerEventsDelegate?
 
     var peerSnapshotPublisher: AnyPublisher<[TransportPeerSnapshot], Never> {
@@ -141,17 +142,9 @@ final class NostrTransport: Transport, @unchecked Sendable {
     func getFingerprint(for peerID: PeerID) -> String? { nil }
     func getNoiseSessionState(for peerID: PeerID) -> LazyHandshakeState { .none }
     func triggerHandshake(with peerID: PeerID) { /* no-op */ }
-    
-    // Nostr does not use Noise sessions here; return a cached placeholder to avoid reallocation
-    private static var cachedNoiseService: NoiseEncryptionService?
-    func getNoiseService() -> NoiseEncryptionService {
-        if let noiseService = Self.cachedNoiseService {
-            return noiseService
-        }
-        let noiseService = NoiseEncryptionService(keychain: keychain)
-        Self.cachedNoiseService = noiseService
-        return noiseService
-    }
+
+    // Nostr does not use Noise sessions here; the inert Transport defaults
+    // for the noise* identity hooks apply.
 
     // Public broadcast not supported over Nostr here
     func sendMessage(_ content: String, mentions: [String]) { /* no-op */ }
@@ -173,9 +166,9 @@ final class NostrTransport: Transport, @unchecked Sendable {
     func sendReadReceipt(_ receipt: ReadReceipt, to peerID: PeerID) {
         // Enqueue and process with throttling to avoid relay rate limits
         // Use barrier to synchronize access to readQueue
-        queue.async(flags: .barrier) { [weak self] in
-            self?.readQueue.append(QueuedRead(receipt: receipt, peerID: peerID))
-            self?.processReadQueueIfNeeded()
+        queue.async(flags: .barrier) {
+            self.readQueue.append(QueuedRead(receipt: receipt, peerID: peerID))
+            self.processReadQueueIfNeeded()
         }
     }
 

@@ -28,9 +28,9 @@ struct CommandGeoParticipant {
 protocol CommandContextProvider: AnyObject {
     // MARK: - State Properties
     var nickname: String { get }
+    var activeChannel: ChannelID { get }
     var selectedPrivateChatPeer: PeerID? { get }
     var blockedUsers: Set<String> { get }
-    var privateChats: [PeerID: [BitchatMessage]] { get set }
     var idBridge: NostrIdentityBridge { get }
 
     // MARK: - Peer Lookup
@@ -42,6 +42,8 @@ protocol CommandContextProvider: AnyObject {
     func startPrivateChat(with peerID: PeerID)
     func sendPrivateMessage(_ content: String, to peerID: PeerID)
     func clearCurrentPublicTimeline()
+    /// Empties the peer's chat (single-writer store intent for `/clear`).
+    func clearPrivateChat(_ peerID: PeerID)
     func sendPublicRaw(_ content: String)
 
     // MARK: - System Messages
@@ -75,7 +77,7 @@ final class CommandProcessor {
         
         // Geohash context: disable favoriting in public geohash or GeoDM
         let inGeoPublic: Bool = {
-            switch LocationChannelManager.shared.selectedChannel {
+            switch contextProvider?.activeChannel ?? .mesh {
             case .mesh: return false
             case .location: return true
             }
@@ -135,7 +137,7 @@ final class CommandProcessor {
     
     private func handleWho() -> CommandResult {
         // Show geohash participants when in a geohash channel; otherwise mesh peers
-        switch LocationChannelManager.shared.selectedChannel {
+        switch contextProvider?.activeChannel ?? .mesh {
         case .location(let ch):
             // Geohash context: show visible geohash participants (exclude self)
             guard let vm = contextProvider else { return .success(message: "nobody around") }
@@ -159,7 +161,7 @@ final class CommandProcessor {
     
     private func handleClear() -> CommandResult {
         if let peerID = contextProvider?.selectedPrivateChatPeer {
-            contextProvider?.privateChats[peerID]?.removeAll()
+            contextProvider?.clearPrivateChat(peerID)
         } else {
             contextProvider?.clearCurrentPublicTimeline()
         }
