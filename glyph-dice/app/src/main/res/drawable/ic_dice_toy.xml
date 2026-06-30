@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Die body -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M30,30 h48 a8,8 0 0 1 8,8 v32 a8,8 0 0 1 -8,8 h-48 a8,8 0 0 1 -8,-8 v-32 a8,8 0 0 1 8,-8 z" />
+
+    <!-- Five pips -->
+    <path android:fillColor="#FFFFFF" android:pathData="M38,46 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M70,46 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,54 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M38,62 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M70,62 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>

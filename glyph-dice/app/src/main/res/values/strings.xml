@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glyph Dice</string>
+    <string name="toy_name">Dice</string>
+    <string name="intro_title">Glyph Dice</string>
+    <string name="intro_body">A dice toy for your Nothing Phone (4a) Pro Glyph Matrix.\n\n1. Tap the button below (or open Settings &gt; Glyph Interface &gt; Glyph Toys).\n2. Drag \"Dice\" from Disabled into the active toys.\n3. Long-press the Glyph button to roll.</string>
+    <string name="btn_add_toy">Add Dice to Glyph Toys</string>
+    <string name="add_toy_fallback">Open Settings &gt; Glyph Interface &gt; Glyph Toys, then enable \"Dice\".</string>
+</resources>
